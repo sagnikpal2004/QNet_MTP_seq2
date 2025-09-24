@@ -10,8 +10,9 @@ using Distributions
 include("utils/bellstates.jl")
 include("processes/entangle.jl")
 include("processes/swapping.jl")
+include("processes/consumer.jl")
 
-function simulation_setup(q::Int, n::Int; T2::Float64, λ::Float64, μ::Float64, t_comm::Float64, F::Float64, success_prob::Float64, q_req::Int=1, t_workload::Float64=1.0)
+function simulation_setup(q::Int, n::Int; T2::Float64, λ::Float64, μ::Float64, t_comm::Float64, F::Float64, success_prob::Float64, q_req::Int=1, t_workload::Float64=1.0, ϵ_g::Float64=0.0, ξ::Float64=0.0)
     network = RegisterNet([Register(q, T2Dephasing(T2)) for _ in 1:2n])
     sim = get_time_tracker(network)
 
@@ -25,11 +26,11 @@ function simulation_setup(q::Int, n::Int; T2::Float64, λ::Float64, μ::Float64,
     end
 
     pairstate = F * Φ⁺ + (1-F)/3 * (Φ⁻ + Ψ⁺ + Ψ⁻)
-    results = Tuple{Float64, Float64, Float64}[]
+    log = Tuple{Float64, Float64, Float64}[]
 
     @process NetworkEntanglerProt(sim, network; λ, μ, pairstate, success_prob, t_comm)()
     for i in 1:n-1
-        @process SwapperProt(sim, network, 2i, 2i+1)()
+        @process SwapperProt(sim, network, 2i, 2i+1; ϵ_g, ξ)()
     end
     for i in 1:2n
         @process EntanglementTracker(sim, network, i)()
@@ -37,7 +38,7 @@ function simulation_setup(q::Int, n::Int; T2::Float64, λ::Float64, μ::Float64,
     # for i in 2:2n-1
     #     @process CutoffProt(sim, network, i, period=nothing, retention_time=6*t_comm)()
     # end
-    @process EntanglementConsumer(sim, network, 1, 2n; period=nothing, log=results)()
+    @process EntanglementPurifyAndConsume(;sim=sim, net=network, nodeA=1, nodeB=2n, log=log, ϵ_g=ϵ_g, ξ=ξ)()
 
-    return sim, network, results
+    return sim, network, log
 end

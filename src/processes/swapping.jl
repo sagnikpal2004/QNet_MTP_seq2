@@ -1,4 +1,4 @@
-import QuantumSavory.CircuitZoo: LocalEntanglementSwap
+include("../noisyops/CircuitZoo.jl")
 
 @kwdef struct SwapperProt <: QuantumSavory.ProtocolZoo.AbstractProtocol
     """time-and-schedule-tracking instance from `ConcurrentSim`"""
@@ -9,11 +9,15 @@ import QuantumSavory.CircuitZoo: LocalEntanglementSwap
     nodeA::Int
     """the vertex index of node B"""
     nodeB::Int
+    """gate error rate"""
+    ϵ_g::Float64=0.0
+    """measurement error rate"""
+    ξ::Float64=0.0
 end
 
-# function SwapperProt(sim::Simulation, net::RegisterNet, nodeA::Int, nodeB::Int; kwargs...)
-#     SwapperProt(; sim, net, nodeA, nodeB, kwargs...)
-# end
+function SwapperProt(sim::Simulation, net::RegisterNet, nodeA::Int, nodeB::Int; kwargs...)
+    SwapperProt(; sim, net, nodeA, nodeB, kwargs...)
+end
 
 @resumable function (prot::SwapperProt)()
     while true
@@ -37,7 +41,7 @@ end
         tag!(q2, EntanglementHistory, tag2[2], tag2[3], tag1[2], tag1[3], q1.idx)
 
         uptotime!((q1, q2), now(prot.sim))
-        swapcircuit = LocalEntanglementSwap()
+        swapcircuit = NoisyLocalEntanglementSwap(prot.ϵ_g, prot.ξ)
         xmeas, zmeas = swapcircuit(q1, q2)
 
         # send from here to new entanglement counterpart:

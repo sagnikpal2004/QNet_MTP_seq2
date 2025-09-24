@@ -21,7 +21,7 @@ t_comm = 0.1 #l0 / c     # internode communication time
 λ = 5.0             # Average rate of requests per second 
 μ = 0.1             # Average rate of service per second
 
-sim, network, results = simulation_setup(q, n; T2, λ, μ, t_comm, F, success_prob, q_req)
+sim, network, results = simulation_setup(q, n; T2, λ, μ, t_comm, F, success_prob, q_req, ϵ_g, ξ)
 
 using GLMakie
 fig = Figure()
