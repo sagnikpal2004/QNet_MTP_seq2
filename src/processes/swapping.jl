@@ -19,7 +19,7 @@ end
     while true
         qubit_pair = findswappablequbits(prot.net, prot.nodeA, prot.nodeB)
         if isnothing(qubit_pair)
-            @debug "SwapperProt: no swappable qubits found. Waiting for tag change..."
+            @info "SwapperProt: no swappable qubits found. Waiting for tag change..."
             @yield onchange_tag(prot.net[prot.nodeA]) | onchange_tag(prot.net[prot.nodeB])
             continue
         end
@@ -44,13 +44,13 @@ end
         # tag with EntanglementUpdateX past_local_node, past_local_slot_idx past_remote_slot_idx new_remote_node, new_remote_slot, correction
         msg1 = Tag(EntanglementUpdateX, prot.nodeA, q1.idx, tag1[3], tag2[2], tag2[3], Int(xmeas))
         put!(channel(prot.net, prot.nodeA=>tag1[2]; permit_forward=true), msg1)
-        @debug "SwapperProt @$(prot.nodeA): Send message to $(tag1[2]) | message=`$msg1` | time = $(now(prot.sim))"
+        @info "SwapperProt @$(prot.nodeA): Send message to $(tag1[2]) | message=`$msg1` | time = $(now(prot.sim))"
 
         # send from here to new entanglement counterpart:
         # tag with EntanglementUpdateZ past_local_node, past_local_slot_idx past_remote_slot_idx new_remote_node, new_remote_slot, correction
         msg2 = Tag(EntanglementUpdateZ, prot.nodeB, q2.idx, tag2[3], tag1[2], tag1[3], Int(zmeas))
         put!(channel(prot.net, prot.nodeB=>tag2[2]; permit_forward=true), msg2)
-        @debug "SwapperProt @$(prot.nodeB): Send message to $(tag2[2]) | message=`$msg2` | time = $(now(prot.sim))"
+        @info "SwapperProt @$(prot.nodeB): Send message to $(tag2[2]) | message=`$msg2` | time = $(now(prot.sim))"
 
         unlock(q1)
         unlock(q2)
